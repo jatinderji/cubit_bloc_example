@@ -1,30 +1,11 @@
-import '../models/users_model.dart';
-import '../repositories/users_repo.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class HomePage extends StatefulWidget {
+import '../cubits/cubit_users_states.dart';
+import '../cubits/users_cubit.dart';
+
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  bool isLoading = true;
-  List<UsersModel> users = [];
-  final UsersRepo usersRepo = UsersRepo();
-  getUsers() async {
-    users = await usersRepo.getUsers();
-    setState(() {
-      isLoading = false;
-    });
-  }
-
-  @override
-  void initState() {
-    getUsers();
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,26 +14,36 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Cubit App'),
         centerTitle: true,
       ),
-      body: Padding(
-          padding: const EdgeInsets.only(left: 10, right: 10),
-          child: isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(),
-                )
-              : ListView.builder(
-                  itemCount: users.length,
+      body: BlocBuilder<UsersCubit, CubitUserStates>(
+        builder: (context, state) {
+          if (state is CubitUsersLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (state is CubitUsersLoaded) {
+            return Padding(
+                padding: const EdgeInsets.only(left: 10, right: 10),
+                child: ListView.builder(
+                  itemCount: state.users.length,
                   itemBuilder: (context, index) => Card(
                     child: ListTile(
                       leading: const Icon(Icons.person),
                       title: Text(
-                        users[index].name,
+                        state.users[index].name,
                         style: const TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text(users[index].email),
+                      subtitle: Text(state.users[index].email),
                     ),
                   ),
-                )),
+                ));
+          } else {
+            return const Center(
+              child: Text('Something went wrong'),
+            );
+          }
+        },
+      ),
     );
   }
 }
